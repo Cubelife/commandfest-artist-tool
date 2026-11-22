@@ -625,6 +625,14 @@ function showUser(){
   try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{flowType:'implicit',persistSession:true,detectSessionInUrl:true}}); }catch(e){ return; }
   document.getElementById('signInBtn').hidden=false;
   setSave('','Saved on this device only');
+  // Only show sign-in options that are switched on in Supabase.
+  const provBtns=authDlg.querySelectorAll('[data-provider]'), orLine=authDlg.querySelector('.or');
+  provBtns.forEach(b=>b.hidden=true); orLine.hidden=true;
+  fetch(SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:SUPABASE_KEY}}).then(r=>r.ok?r.json():null).then(s=>{
+    const ext=(s&&s.external)||{}; let any=false;
+    provBtns.forEach(b=>{ const on=!!ext[b.dataset.provider]; b.hidden=!on; any=any||on; });
+    orLine.hidden=!any;
+  }).catch(()=>{});
   const hp=new URLSearchParams(location.hash.slice(1));
   if(hp.get('error_description')){ openAuth(); amsg('Sign-in didn’t work: '+hp.get('error_description').replace(/\+/g,' '),'err'); history.replaceState(null,'',here()); }
   sb.auth.onAuthStateChange((event,session)=>{
